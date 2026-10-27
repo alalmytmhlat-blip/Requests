@@ -30,6 +30,12 @@ jobs:
         run: |
           sed -i 's/android:label="requests_app"/android:label="طلبات"/' android/app/src/main/AndroidManifest.xml
       - run: flutter pub get
+      - name: Generate app icon artwork
+        run: |
+          python -m pip install --quiet pillow
+          python tool/generate_app_icon.py
+      - name: Apply Android launcher icon
+        run: dart run flutter_launcher_icons
       # Analyzer infos are non-blocking; errors and warnings still fail the build.
       - run: flutter analyze lib --no-fatal-infos
       - run: flutter build apk --release
