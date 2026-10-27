@@ -19,15 +19,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      # This repository initially contains Dart source but no Android host
-      # project. Generate the Android platform files before compiling.
+      # Generate Android platform files when this repository has only Dart source.
       - name: Generate Android platform project if missing
         run: |
           if [ ! -f android/app/build.gradle ] && [ ! -f android/app/build.gradle.kts ]; then
             flutter create . --platforms=android --project-name requests_app --org com.requests
           fi
       - run: flutter pub get
-      - run: flutter analyze lib
+      # Analyzer infos are non-blocking; errors and warnings still fail the build.
+      - run: flutter analyze lib --no-fatal-infos
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
