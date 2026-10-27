@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
@@ -46,14 +48,14 @@ class AppDb {
 class HomePage extends StatefulWidget { const HomePage({super.key}); @override State<HomePage> createState()=>_HomePageState(); }
 class _HomePageState extends State<HomePage> {
   int tab=0;
-  String shopName='إدارة الطلبات', address='', phone1='', phone2='', worker='عامل';
+  String shopName='إدارة الطلبات', address='', phone1='', phone2='', worker='عامل', logoPath='';
   List<Map<String,Object?>> items=[], requests=[];
   @override void initState(){super.initState(); _load();}
   Future<void> _load() async {
     final prefs=await SharedPreferences.getInstance();
     final i=await AppDb.instance.items(); final r=await AppDb.instance.requests();
     if(!mounted)return;
-    setState(() { items=i; requests=r; shopName=prefs.getString('shopName')??'إدارة الطلبات'; address=prefs.getString('address')??''; phone1=prefs.getString('phone1')??''; phone2=prefs.getString('phone2')??''; worker=prefs.getString('worker')??'عامل'; });
+    setState(() { items=i; requests=r; shopName=prefs.getString('shopName')??'إدارة الطلبات'; address=prefs.getString('address')??''; phone1=prefs.getString('phone1')??''; phone2=prefs.getString('phone2')??''; worker=prefs.getString('worker')??'عامل'; logoPath=prefs.getString('logoPath')??''; });
   }
   Future<void> _addItem() async {
     final name=TextEditingController(), category=TextEditingController(), unit=TextEditingController(text:'حبة');
@@ -66,6 +68,13 @@ class _HomePageState extends State<HomePage> {
     final ok=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('تسجيل صنف ناقص'),content:Column(mainAxisSize:MainAxisSize.min,children:[DropdownButtonFormField<int>(value:selected,decoration:const InputDecoration(labelText:'الصنف'),items:items.map((e)=>DropdownMenuItem(value:e['id'] as int,child:Text('${e['name']}'))).toList(),onChanged:(v)=>selected=v),TextField(controller:qty,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'الكمية المطلوبة')),TextField(controller:note,decoration:const InputDecoration(labelText:'ملاحظات / مواصفات'))]),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('إرسال للمراجعة'))]));
     if(ok==true){final item=items.firstWhere((e)=>e['id']==selected);final q=double.tryParse(qty.text)??0;if(q>0){await AppDb.instance.addRequest(selected,item['name'].toString(),q,note.text,worker);await _load();}}
   }
+  Future<void> _pickLogo() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('logoPath', picked.path);
+    await _load();
+  }
   Future<void> _settings() async {
     final n=TextEditingController(text:shopName),a=TextEditingController(text:address),p1=TextEditingController(text:phone1),p2=TextEditingController(text:phone2),w=TextEditingController(text:worker);
     final ok=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('إعدادات النشاط'),content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[TextField(controller:n,decoration:const InputDecoration(labelText:'اسم النشاط')),TextField(controller:a,decoration:const InputDecoration(labelText:'العنوان')),TextField(controller:p1,decoration:const InputDecoration(labelText:'رقم الهاتف الأول')),TextField(controller:p2,decoration:const InputDecoration(labelText:'رقم الهاتف الثاني')),TextField(controller:w,decoration:const InputDecoration(labelText:'اسم العامل / المستخدم'))])),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('حفظ'))]));
@@ -77,5 +86,5 @@ class _HomePageState extends State<HomePage> {
   }
   Widget _requestsPage()=>RefreshIndicator(onRefresh:_load,child:requests.isEmpty?ListView(children:[const SizedBox(height:150),Center(child:Text('لا توجد طلبات بعد'))]):ListView.builder(itemCount:requests.length,itemBuilder:(c,i){final r=requests[i];return Card(margin:const EdgeInsets.symmetric(horizontal:12,vertical:5),child:ListTile(leading:const Icon(Icons.inventory_2_outlined),title:Text(r['itemName'].toString()),subtitle:Text('الكمية: ${r['qty']} • ${r['worker']??''}\n${r['note']??''}'),isThreeLine:true,trailing:PopupMenuButton<String>(initialValue:r['status'] as String, onSelected:(v)async{await AppDb.instance.setStatus(r['id'] as int,v);await _load();},itemBuilder:(c)=>['جديد','قيد التجهيز','تم توفيره','غير متوفر'].map((s)=>PopupMenuItem(value:s,child:Text(s))).toList(),child:Chip(label:Text(r['status'].toString())))));}));
   Widget _itemsPage()=>RefreshIndicator(onRefresh:_load,child:items.isEmpty?ListView(children:[const SizedBox(height:140),const Center(child:Text('لم تتم إضافة أصناف'))]):ListView.builder(itemCount:items.length,itemBuilder:(c,i){final e=items[i];return Card(margin:const EdgeInsets.symmetric(horizontal:12,vertical:4),child:ListTile(leading:const Icon(Icons.category_outlined),title:Text(e['name'].toString()),subtitle:Text('التصنيف: ${e['category']} • الوحدة: ${e['unit']}')));}));
-  Widget _settingsPage()=>ListView(padding:const EdgeInsets.all(16),children:[const Icon(Icons.storefront,size:64,color:Color(0xff1769aa)),Center(child:Text(shopName,style:Theme.of(context).textTheme.titleLarge)),const SizedBox(height:12),ListTile(leading:const Icon(Icons.location_on),title:Text(address.isEmpty?'أضف عنوان النشاط':address)),ListTile(leading:const Icon(Icons.phone),title:Text([phone1,phone2].where((s)=>s.isNotEmpty).join(' • ').isEmpty?'أضف أرقام التواصل':[phone1,phone2].where((s)=>s.isNotEmpty).join(' • '))),ListTile(leading:const Icon(Icons.person),title:Text('المستخدم: $worker')),const SizedBox(height:12),FilledButton.icon(onPressed:_settings,icon:const Icon(Icons.edit),label:const Text('تعديل إعدادات النشاط'))]);
+  Widget _settingsPage()=>ListView(padding:const EdgeInsets.all(16),children:[(logoPath.isNotEmpty && File(logoPath).existsSync()) ? ClipRRect(borderRadius:BorderRadius.circular(12),child:Image.file(File(logoPath),width:96,height:96,fit:BoxFit.contain)) : const Icon(Icons.storefront,size:64,color:Color(0xff1769aa)),Center(child:Text(shopName,style:Theme.of(context).textTheme.titleLarge)),OutlinedButton.icon(onPressed:_pickLogo,icon:const Icon(Icons.image),label:const Text('اختيار شعار النشاط')),const SizedBox(height:12),ListTile(leading:const Icon(Icons.location_on),title:Text(address.isEmpty?'أضف عنوان النشاط':address)),ListTile(leading:const Icon(Icons.phone),title:Text([phone1,phone2].where((s)=>s.isNotEmpty).join(' • ').isEmpty?'أضف أرقام التواصل':[phone1,phone2].where((s)=>s.isNotEmpty).join(' • '))),ListTile(leading:const Icon(Icons.person),title:Text('المستخدم: $worker')),const SizedBox(height:12),FilledButton.icon(onPressed:_settings,icon:const Icon(Icons.edit),label:const Text('تعديل إعدادات النشاط'))]);
 }
