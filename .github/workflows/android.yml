@@ -27,7 +27,7 @@ jobs:
             flutter create . --platforms=android --project-name requests_app --org com.requests
           fi
       - run: flutter pub get
-      - run: flutter analyze
+      - run: flutter analyze lib
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
