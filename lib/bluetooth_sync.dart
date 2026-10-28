@@ -29,6 +29,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
       Permission.bluetoothAdvertise,
       Permission.bluetoothConnect,
       Permission.bluetoothScan,
+      Permission.nearbyWifiDevices,
     ];
     final results = await permissions.request();
     final granted = results.values.every((status) => status.isGranted);
