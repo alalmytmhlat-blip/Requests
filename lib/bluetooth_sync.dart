@@ -20,17 +20,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
   @override
   void initState() {
     super.initState();
-    nearby.onPayloadReceived = (endpointId, payload) async {
-      if (payload.type == PayloadType.BYTES && payload.bytes != null) {
-        try {
-          await AppDb.instance.importSnapshot(utf8.decode(payload.bytes!));
-          if (mounted) setState(() => status = 'تم استقبال البيانات ودمجها محليًا');
-          await _sendSnapshot(endpointId);
-        } catch (_) {
-          if (mounted) setState(() => status = 'تعذر قراءة البيانات المستلمة');
-        }
-      }
-    };
+    
   }
 
   Future<void> _receivePayload(String endpointId, Payload payload) async {
