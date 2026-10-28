@@ -29,6 +29,9 @@ jobs:
       - name: Set Android application label
         run: |
           sed -i 's/android:label="requests_app"/android:label="طلبات"/' android/app/src/main/AndroidManifest.xml
+      - name: Add Bluetooth permissions
+        run: |
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.BLUETOOTH" />\n    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />\n    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />' android/app/src/main/AndroidManifest.xml
       - run: flutter pub get
       - name: Generate app icon artwork
         run: |
