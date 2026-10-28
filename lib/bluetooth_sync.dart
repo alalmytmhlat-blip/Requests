@@ -58,9 +58,20 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
   }
 
   Future<void> _startManager() async {
-    if (!await _ensureBluetoothPermissions()) return;
-    setState(() { busy = true; status = 'جاري تشغيل استقبال البلوتوث…'; });
+    if (busy) return;
+    setState(() {
+      busy = true;
+      status = 'جاري التحقق من الصلاحيات…';
+    });
     try {
+      if (!await _ensureBluetoothPermissions()) return;
+
+      // Clear any stale advertising session left by a previous attempt.
+      try {
+        await nearby.stopAdvertising();
+      } catch (_) {}
+
+      if (mounted) setState(() => status = 'جاري تشغيل استقبال البلوتوث…');
       await nearby.startAdvertising(
         'طلبات-المسؤول',
         strategy,
@@ -81,7 +92,12 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
       );
       if (mounted) setState(() => status = 'جهاز المسؤول جاهز لاستقبال العاملين');
     } catch (e) {
-      if (mounted) setState(() => status = 'تعذر تشغيل البلوتوث: $e');
+      final message = e.toString();
+      if (mounted) {
+        setState(() => status = message.contains('STATUS_ALREADY_ADVERTISING')
+            ? 'جهاز المسؤول يعلن بالفعل؛ اضغط إيقاف المزامنة ثم أعد التشغيل.'
+            : 'تعذر تشغيل البلوتوث: $e');
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
