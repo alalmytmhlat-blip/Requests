@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:nearby_connections/nearby_connections.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'main.dart';
 
 class BluetoothSyncPage extends StatefulWidget {
@@ -23,6 +24,23 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
     
   }
 
+  Future<bool> _ensureBluetoothPermissions() async {
+    final permissions = <Permission>[
+      Permission.bluetoothAdvertise,
+      Permission.bluetoothConnect,
+      Permission.bluetoothScan,
+    ];
+    final results = await permissions.request();
+    final granted = results.values.every((status) => status.isGranted);
+    if (!granted && mounted) {
+      final permanentlyDenied = results.values.any((status) => status.isPermanentlyDenied);
+      setState(() => status = permanentlyDenied
+          ? 'صلاحيات البلوتوث مرفوضة نهائيًا. افتح إعدادات التطبيق واسمح بالبلوتوث.'
+          : 'يرجى السماح بصلاحيات البلوتوث لتشغيل المزامنة.');
+    }
+    return granted;
+  }
+
   Future<void> _receivePayload(String endpointId, Payload payload) async {
     if (payload.type != PayloadType.BYTES || payload.bytes == null) return;
     try {
@@ -39,6 +57,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
   }
 
   Future<void> _startManager() async {
+    if (!await _ensureBluetoothPermissions()) return;
     setState(() { busy = true; status = 'جاري تشغيل استقبال البلوتوث…'; });
     try {
       await nearby.startAdvertising(
@@ -68,6 +87,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
   }
 
   Future<void> _startWorker() async {
+    if (!await _ensureBluetoothPermissions()) return;
     setState(() { busy = true; status = 'جاري البحث عن جهاز المسؤول…'; endpoints.clear(); });
     try {
       await nearby.startDiscovery(
@@ -88,6 +108,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
   }
 
   Future<void> _connect(String id) async {
+    if (!await _ensureBluetoothPermissions()) return;
     setState(() { busy = true; status = 'جاري الاتصال بجهاز المسؤول…'; });
     try {
       await nearby.requestConnection(
