@@ -41,7 +41,6 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
   Future<void> _startManager() async {
     setState(() { busy = true; status = 'جاري تشغيل استقبال البلوتوث…'; });
     try {
-      await nearby.askLocationPermission();
       await nearby.startAdvertising(
         'طلبات-المسؤول',
         strategy,
