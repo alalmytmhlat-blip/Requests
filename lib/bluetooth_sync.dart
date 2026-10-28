@@ -75,8 +75,8 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
       await nearby.startDiscovery(
         'طلبات-عامل',
         strategy,
-        onEndpointFound: (id, info) {
-          if (mounted) setState(() { endpoints[id] = info; status = 'تم العثور على جهاز: ${info.endpointName}'; });
+        onEndpointFound: (id, name, serviceId) {
+          if (mounted) setState(() { endpoints[id] = name; status = 'تم العثور على جهاز: $name'; });
         },
         onEndpointLost: (id) {
           if (mounted) setState(() => endpoints.remove(id));
