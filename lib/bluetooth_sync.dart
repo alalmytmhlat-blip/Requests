@@ -70,7 +70,6 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
   Future<void> _startWorker() async {
     setState(() { busy = true; status = 'جاري البحث عن جهاز المسؤول…'; endpoints.clear(); });
     try {
-      await nearby.askLocationPermission();
       await nearby.startDiscovery(
         'طلبات-عامل',
         strategy,
