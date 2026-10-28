@@ -33,7 +33,17 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
     };
   }
 
-  Future<void> _receivePayload(String endpointId, Payload payload) async {\n    if (payload.type != PayloadType.BYTES || payload.bytes == null) return;\n    try {\n      await AppDb.instance.importSnapshot(utf8.decode(payload.bytes!));\n      if (mounted) setState(() => status = 'تم استقبال البيانات ودمجها محليًا');\n    } catch (_) {\n      if (mounted) setState(() => status = 'تعذر قراءة البيانات المستلمة');\n    }\n  }\n\n  Future<void> _sendSnapshot(String endpointId) async {
+  Future<void> _receivePayload(String endpointId, Payload payload) async {
+    if (payload.type != PayloadType.BYTES || payload.bytes == null) return;
+    try {
+      await AppDb.instance.importSnapshot(utf8.decode(payload.bytes!));
+      if (mounted) setState(() => status = 'تم استقبال البيانات ودمجها محليًا');
+    } catch (_) {
+      if (mounted) setState(() => status = 'تعذر قراءة البيانات المستلمة');
+    }
+  }
+
+  Future<void> _sendSnapshot(String endpointId) async {
     final snapshot = await AppDb.instance.exportSnapshot();
     await nearby.sendBytesPayload(endpointId, utf8.encode(snapshot));
   }
@@ -76,7 +86,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
         'طلبات-عامل',
         strategy,
         onEndpointFound: (id, info) {
-          if (mounted) setState(() { endpoints[id] = info.endpointName; status = 'تم العثور على جهاز: ${info.endpointName}'; });
+          if (mounted) setState(() { endpoints[id] = info; status = 'تم العثور على جهاز: ${info.endpointName}'; });
         },
         onEndpointLost: (id) {
           if (mounted) setState(() => endpoints.remove(id));
