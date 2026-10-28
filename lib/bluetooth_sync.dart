@@ -14,6 +14,8 @@ class BluetoothSyncPage extends StatefulWidget {
 class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
   final Nearby nearby = Nearby();
   final Strategy strategy = Strategy.P2P_CLUSTER;
+  // Both devices must use the same Nearby Connections service ID.
+  static const String _serviceId = 'طلبات-المزامنة';
   final Map<String, String> endpoints = {};
   String status = 'اختر وضع المزامنة ثم اجعل الجهازين قريبين';
   bool busy = false;
@@ -73,7 +75,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
 
       if (mounted) setState(() => status = 'جاري تشغيل استقبال البلوتوث…');
       await nearby.startAdvertising(
-        'طلبات-المسؤول',
+        _serviceId,
         strategy,
         onConnectionInitiated: (id, info) {
           nearby.acceptConnection(id, onPayLoadRecieved: _receivePayload);
@@ -108,7 +110,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
     setState(() { busy = true; status = 'جاري البحث عن جهاز المسؤول…'; endpoints.clear(); });
     try {
       await nearby.startDiscovery(
-        'طلبات-عامل',
+        _serviceId,
         strategy,
         onEndpointFound: (id, name, serviceId) {
           if (mounted) setState(() { endpoints[id] = name; status = 'تم العثور على جهاز: $name'; });
