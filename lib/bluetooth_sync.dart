@@ -27,11 +27,14 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
   }
 
   Future<bool> _ensureBluetoothPermissions() async {
+    // Android 11 (API 30) and older require runtime location permission
+    // for BLE discovery. Android 12+ uses the Nearby Devices permissions.
     final permissions = <Permission>[
       Permission.bluetoothAdvertise,
       Permission.bluetoothConnect,
       Permission.bluetoothScan,
       Permission.nearbyWifiDevices,
+      Permission.locationWhenInUse,
     ];
     final results = await permissions.request();
     final granted = results.values.every((status) => status.isGranted);
