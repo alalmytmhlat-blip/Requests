@@ -33,7 +33,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
     };
   }
 
-  Future<void> _sendSnapshot(String endpointId) async {
+  Future<void> _receivePayload(String endpointId, Payload payload) async {\n    if (payload.type != PayloadType.BYTES || payload.bytes == null) return;\n    try {\n      await AppDb.instance.importSnapshot(utf8.decode(payload.bytes!));\n      if (mounted) setState(() => status = 'تم استقبال البيانات ودمجها محليًا');\n    } catch (_) {\n      if (mounted) setState(() => status = 'تعذر قراءة البيانات المستلمة');\n    }\n  }\n\n  Future<void> _sendSnapshot(String endpointId) async {
     final snapshot = await AppDb.instance.exportSnapshot();
     await nearby.sendBytesPayload(endpointId, utf8.encode(snapshot));
   }
@@ -46,7 +46,7 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
         'طلبات-المسؤول',
         strategy,
         onConnectionInitiated: (id, info) {
-          nearby.acceptConnection(id, onPayLoadRecieved: (endpointId, payload) {});
+          nearby.acceptConnection(id, onPayLoadRecieved: _receivePayload);
         },
         onConnectionResult: (id, result) async {
           if (result == Status.CONNECTED) {
@@ -96,13 +96,13 @@ class _BluetoothSyncPageState extends State<BluetoothSyncPage> {
         'طلبات-عامل',
         id,
         onConnectionInitiated: (endpointId, info) {
-          nearby.acceptConnection(endpointId, onPayLoadRecieved: (from, payload) {});
+          nearby.acceptConnection(endpointId, onPayLoadRecieved: _receivePayload);
         },
         onConnectionResult: (endpointId, result) async {
           if (result == Status.CONNECTED) {
             await _sendSnapshot(endpointId);
             if (mounted) setState(() => status = 'تم الاتصال؛ تتم مزامنة البيانات');
-          } else if (mounted {
+          } else if (mounted) {
             setState(() => status = 'فشل الاتصال');
           }
         },
