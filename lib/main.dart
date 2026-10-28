@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:nearby_connections/nearby_connections.dart';
+import 'bluetooth_sync.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
